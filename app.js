@@ -125,13 +125,15 @@ async function captureAllRequests(url) {
             if (responseBody && responseBody.trim() !== '') {
               parsedResponseBody = JSON.parse(responseBody);
               
-              // Extract coupon_code and secret_code values from the response if available
+              // Extract coupon_code, secret_code, and expiration values from the response if available
               if (parsedResponseBody.result && Array.isArray(parsedResponseBody.result)) {
                 coupons = parsedResponseBody.result
-                  .filter(item => item.coupon_code && item.secret_code)
+                  .filter(item => item.coupon_code) // Only require coupon_code to be present
                   .map(item => ({
                     coupon_code: item.coupon_code,
-                    secret_code: item.secret_code
+                    secret_code: item.secret_code || null, // Allow null secret_code
+                    expires_in: item.opened_expire_in || null, // Add expiration information
+                    source_url: url // Store the source URL
                   }));
               }
             }
@@ -389,10 +391,12 @@ app.post('/export-excel', async (req, res) => {
     const workbook = new excel.Workbook();
     const worksheet = workbook.addWorksheet('Coupons');
     
-    // Add headers
+    // Add headers with new columns
     worksheet.columns = [
       { header: 'Coupon Code', key: 'coupon_code', width: 40 },
-      { header: 'Secret Code', key: 'secret_code', width: 30 }
+      { header: 'Secret Code', key: 'secret_code', width: 30 },
+      { header: 'Expiration', key: 'expiration', width: 30 },
+      { header: 'Source URL', key: 'source_url', width: 60 }
     ];
     
     // Add style to header row
@@ -409,9 +413,25 @@ app.post('/export-excel', async (req, res) => {
     
     // Add all coupon data
     coupons.forEach(coupon => {
+      // Format expiration info if available
+      let expirationText = 'N/A';
+      if (coupon.expires_in) {
+        const expiresIn = coupon.expires_in;
+        const parts = [];
+        
+        if (expiresIn.days) parts.push(`${expiresIn.days} days`);
+        if (expiresIn.hours) parts.push(`${expiresIn.hours} hours`);
+        if (expiresIn.minutes) parts.push(`${expiresIn.minutes} minutes`);
+        if (expiresIn.seconds) parts.push(`${expiresIn.seconds} seconds`);
+        
+        expirationText = parts.join(', ');
+      }
+      
       worksheet.addRow({
         coupon_code: coupon.coupon_code,
-        secret_code: coupon.secret_code
+        secret_code: coupon.secret_code || 'NULL',
+        expiration: expirationText,
+        source_url: coupon.source_url || 'Unknown'
       });
     });
     

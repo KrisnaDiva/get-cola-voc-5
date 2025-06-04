@@ -407,7 +407,7 @@
   <div class="container">
     <div class="header">
       <h1>Coupon Code Extractor</h1>
-      <p>Extracts <code>coupon_code</code> and <code>secret_code</code> from multiple URLs</p>
+      <p>Extracts <code>coupon_code</code>, <code>secret_code</code>, and expiration information from multiple URLs</p>
     </div>
     
     <div class="request-card">
@@ -747,15 +747,33 @@
                         <tr style="background-color: rgba(52, 152, 219, 0.1);">
                           <th style="text-align: left; padding: 8px; border-bottom: 2px solid var(--primary-color);">Coupon Code</th>
                           <th style="text-align: left; padding: 8px; border-bottom: 2px solid var(--primary-color);">Secret Code</th>
+                          <th style="text-align: left; padding: 8px; border-bottom: 2px solid var(--primary-color);">Expires In</th>
                         </tr>
                       </thead>
                       <tbody>
-                        ${request.response.coupons.map(coupon => `
-                          <tr style="border-bottom: 1px solid #eee;">
-                            <td style="padding: 8px; font-family: monospace; font-weight: bold;">${coupon.coupon_code}</td>
-                            <td style="padding: 8px; font-family: monospace; font-weight: bold;">${coupon.secret_code}</td>
-                          </tr>
-                        `).join('')}
+                        ${request.response.coupons.map(coupon => {
+                          // Format expiration info if available
+                          let expirationText = 'N/A';
+                          if (coupon.expires_in) {
+                            const expiresIn = coupon.expires_in;
+                            const parts = [];
+                            
+                            if (expiresIn.days) parts.push(`${expiresIn.days} days`);
+                            if (expiresIn.hours) parts.push(`${expiresIn.hours} hours`);
+                            if (expiresIn.minutes) parts.push(`${expiresIn.minutes} minutes`);
+                            if (expiresIn.seconds) parts.push(`${expiresIn.seconds} seconds`);
+                            
+                            expirationText = parts.join(', ');
+                          }
+                          
+                          return `
+                            <tr style="border-bottom: 1px solid #eee;">
+                              <td style="padding: 8px; font-family: monospace; font-weight: bold;">${coupon.coupon_code}</td>
+                              <td style="padding: 8px; font-family: monospace; font-weight: bold;">${coupon.secret_code || '<span style="color: #999;">NULL</span>'}</td>
+                              <td style="padding: 8px;">${expirationText}</td>
+                            </tr>
+                          `;
+                        }).join('')}
                       </tbody>
                     </table>
                   </div>
