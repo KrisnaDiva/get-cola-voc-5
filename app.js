@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const excel = require('exceljs');
 const fs = require('fs');
 const path = require('path');
+const compression = require('compression'); // You'll need to install this: npm install compression
 const app = express();
 const port = 3000;
 
@@ -14,8 +15,12 @@ if (!fs.existsSync(downloadsDir)){
 }
 
 // Middleware
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+// Enable compression for all responses
+app.use(compression());
+
+// Increase the body parser limit (set to 50MB)
+app.use(bodyParser.urlencoded({ extended: false, limit: '50mb' }));
+app.use(bodyParser.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
 // Home page
@@ -387,6 +392,8 @@ app.post('/export-excel', async (req, res) => {
   }
   
   try {
+    console.log(`Exporting ${coupons.length} coupons to Excel`);
+    
     // Create a new Excel workbook
     const workbook = new excel.Workbook();
     const worksheet = workbook.addWorksheet('Coupons');

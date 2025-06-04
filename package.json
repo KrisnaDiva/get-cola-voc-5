@@ -8,6 +8,7 @@
     "dev": "nodemon app.js"
   },
   "dependencies": {
+    "compression": "^1.7.4",
     "express": "^4.17.1",
     "puppeteer": "^13.0.0",
     "body-parser": "^1.19.0",

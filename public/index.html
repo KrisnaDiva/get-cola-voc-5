@@ -812,15 +812,38 @@
       // Clear previous status
       document.getElementById('exportStatus').innerHTML = '';
       
+      // Show notification for large datasets
+      if (allFoundCoupons.length > 1000) {
+        document.getElementById('exportStatus').innerHTML = `
+          <div class="info-alert" style="background-color: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 4px; margin-top: 15px; border-left: 4px solid #17a2b8;">
+            <strong>Large dataset:</strong> Exporting ${allFoundCoupons.length} coupons may take a moment. Please wait...
+          </div>
+        `;
+      }
+      
+      // For very large datasets, we can split them into chunks
+      // But first try with compression enabled on the server
+      const exportData = { coupons: allFoundCoupons };
+      
       // Send all coupons to server to generate Excel file
       fetch('/export-excel', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept-Encoding': 'gzip, deflate'
         },
-        body: JSON.stringify({ coupons: allFoundCoupons })
+        body: JSON.stringify(exportData)
       })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          // If we get a 413 error, try implementing batching here
+          if (response.status === 413) {
+            throw new Error('The data is too large to export at once. Please try exporting fewer coupons or contact support.');
+          }
+          throw new Error(`Server responded with status: ${response.status}`);
+        }
+        return response.json();
+      })
       .then(data => {
         exportButton.disabled = false;
         exportButton.innerText = `📊 Export All ${allFoundCoupons.length} Coupons to Excel`;
@@ -852,6 +875,20 @@
             <strong>Error:</strong> ${error.message}
           </div>
         `;
+        
+        // If we had a "content too large" error, suggest a solution
+        if (error.message.includes('too large')) {
+          document.getElementById('exportStatus').innerHTML += `
+            <div style="margin-top: 15px;">
+              <p><strong>Solution:</strong> Try one of these approaches:</p>
+              <ol>
+                <li>Export fewer coupons at a time by analyzing fewer URLs</li>
+                <li>Try clearing your browser cache and trying again</li>
+                <li>Download the data in smaller batches</li>
+              </ol>
+            </div>
+          `;
+        }
       });
     }
     
