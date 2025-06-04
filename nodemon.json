@@ -1,0 +1,6 @@
+{
+  "watch": ["app.js", "public/"],
+  "ext": "js,html,css",
+  "ignore": ["node_modules/"],
+  "delay": "1000"
+}

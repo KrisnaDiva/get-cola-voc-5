@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>userCoupons Request Analyzer</title>
+  <style>
+    :root {
+      --primary-color: #3498db;
+      --primary-dark: #2980b9;
+      --text-color: #333333;
+      --background-color: #f5f5f5;
+      --card-color: #ffffff;
+      --accent-color: #e74c3c;
+      --gray-light: #f8f9fa;
+      --gray-dark: #e0e0e0;
+    }
+    
+    body {
+      font-family: 'Montserrat', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: var(--card-color);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-top: 30px;
+      margin-bottom: 30px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--primary-color);
+    }
+    
+    .header h1 {
+      color: var(--primary-color);
+      font-size: 28px;
+      margin: 0;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+    }
+    
+    .header p {
+      color: var(--text-color);
+      opacity: 0.8;
+      margin-top: 10px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+    }
+    
+    input[type="url"] {
+      width: 75%;
+      padding: 12px 15px;
+      border: 1px solid var(--gray-dark);
+      border-radius: 4px;
+      font-size: 15px;
+      transition: border-color 0.3s;
+    }
+    
+    input[type="url"]:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+    
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: background-color 0.3s;
+      margin-left: 10px;
+      white-space: nowrap;
+    }
+    
+    button:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+    
+    .loading {
+      display: none;
+      margin: 20px 0;
+      text-align: center;
+      padding: 15px;
+      background-color: var(--gray-light);
+      border-radius: 4px;
+    }
+    
+    .loading::after {
+      content: "";
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(52, 152, 219, 0.3);
+      border-radius: 50%;
+      border-top-color: var(--primary-color);
+      animation: spin 1s ease-in-out infinite;
+      vertical-align: middle;
+      margin-left: 10px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .results {
+      margin-top: 30px;
+    }
+    
+    .request-card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+      border-top: 4px solid var(--primary-color);
+    }
+    
+    .request-card h2 {
+      color: var(--primary-color);
+      margin-top: 0;
+      font-size: 22px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    
+    .request-section, .response-section {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 6px;
+      border: 1px solid #eee;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .success-message {
+      background-color: #dff0d8;
+      color: #3c763d;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 10px;
+      border-left: 4px solid #5cb85c;
+    }
+    
+    .error-message {
+      background-color: #f2dede;
+      color: #a94442;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 10px;
+      border-left: 4px solid #d9534f;
+    }
+    
+    pre {
+      background-color: #f8f8f8;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      overflow: auto;
+      font-family: monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    .method-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-left: 8px;
+      text-transform: uppercase;
+    }
+    
+    .method-get {
+      background-color: #28a745;
+      color: white;
+    }
+    
+    .method-post {
+      background-color: #007bff;
+      color: white;
+    }
+    
+    .method-put {
+      background-color: #fd7e14;
+      color: white;
+    }
+    
+    .method-delete {
+      background-color: #dc3545;
+      color: white;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+    
+    .status-2xx {
+      background-color: #28a745;
+      color: white;
+    }
+    
+    .status-3xx {
+      background-color: #17a2b8;
+      color: white;
+    }
+    
+    .status-4xx {
+      background-color: #fd7e14;
+      color: white;
+    }
+    
+    .status-5xx {
+      background-color: #dc3545;
+      color: white;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 15px;
+      color: #777;
+      font-size: 14px;
+      border-top: 1px solid #eee;
+    }
+
+    .full-width-input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid var(--gray-dark);
+      border-radius: 4px;
+      font-size: 15px;
+      transition: border-color 0.3s;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    
+    .full-width-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+    
+    .expand-button {
+      background-color: #f0f0f0;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    
+    .request-details {
+      margin-top: 10px;
+      display: none;
+    }
+    
+    .filter-section {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 6px;
+      border: 1px solid #eee;
+    }
+    
+    .export-button {
+      background-color: #27ae60;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 15px;
+      transition: background-color 0.3s;
+    }
+    
+    .export-button:hover {
+      background-color: #219653;
+    }
+    
+    .export-button:disabled {
+      background-color: #95a5a6;
+      cursor: not-allowed;
+    }
+    
+    .export-icon {
+      margin-right: 8px;
+    }
+    
+    .success-alert {
+      background-color: #d4edda;
+      color: #155724;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 15px;
+      border-left: 4px solid #28a745;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .download-link {
+      background-color: #28a745;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
+    .download-link:hover {
+      background-color: #218838;
+    }
+    
+    /* Modal styles for failed URLs list */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .modal-content {
+      background-color: white;
+      margin: 5% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 800px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--primary-color);
+      margin: 0;
+    }
+    
+    .close-button {
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #666;
+    }
+    
+    .close-button:hover {
+      color: var(--accent-color);
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Coupon Code Extractor</h1>
+      <p>Extracts <code>coupon_code</code> and <code>secret_code</code> from multiple URLs</p>
+    </div>
+    
+    <div class="request-card">
+      <h2>Enter URLs to Analyze</h2>
+      <div class="form-section">
+        <p style="font-weight: 600; margin-bottom: 10px;">Enter the website URLs (one per line):</p>
+        <textarea id="urlInput" class="full-width-input" style="min-height: 100px; resize: vertical;" placeholder="https://example1.com&#10;https://example2.com&#10;https://example3.com" required></textarea>
+        
+        <div style="margin-top: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: 600;">Delay between requests (seconds):</label>
+          <input type="range" id="delaySlider" min="1" max="30" value="5" style="width: 50%;">
+          <span id="delayValue">5</span> seconds
+          <p style="margin-top: 5px; font-size: 13px; color: #666;">Adding a delay helps avoid rate limiting and bans</p>
+        </div>
+        
+        <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+          <button onclick="analyzeUrls()" style="margin-left: 0;">Analyze All URLs</button>
+          <span id="urlCount" style="color: #666; font-size: 14px;">0 URLs</span>
+        </div>
+        <p style="margin-top: 10px; font-size: 13px; color: #666;">
+          <strong>Note:</strong> This tool randomizes user agents for each request to avoid detection
+        </p>
+      </div>
+    </div>
+    
+    <div id="loading" class="loading">
+      Analyzing requests, please wait... <span id="progressCounter">0/0</span>
+    </div>
+    
+    <div id="requestLog" class="hidden" style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 6px; border: 1px solid #eee;">
+      <h3 style="margin-top: 0; color: var(--primary-dark);">Request Log:</h3>
+      <div id="logMessages" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;"></div>
+    </div>
+    
+    <div id="exportSection" class="hidden" style="margin-top: 20px;">
+      <button id="exportButton" class="export-button" onclick="exportAllCoupons()">
+        <span class="export-icon">📊</span> Export All Coupons to Excel
+      </button>
+      <div id="exportStatus"></div>
+    </div>
+    
+    <div id="results" class="results"></div>
+    
+    <div class="footer">
+      &copy; 2025 userCoupons Request Analyzer
+    </div>
+  </div>
+
+  <!-- Modal for Failed URLs -->
+  <div id="failedUrlsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Failed URLs List</h3>
+        <button class="close-button" onclick="closeModal()">&times;</button>
+      </div>
+      <div id="modalFailedUrlsList" style="margin-bottom: 15px;"></div>
+      <div style="display: flex; justify-content: space-between;">
+        <button onclick="copyAllFailedUrls()" style="background-color: var(--primary-color);">Copy All URLs</button>
+        <button onclick="exportFailedUrls()" style="background-color: #7f8c8d;">Export as Text File</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configure delay slider
+    const delaySlider = document.getElementById('delaySlider');
+    const delayValue = document.getElementById('delayValue');
+    
+    delaySlider.addEventListener('input', function() {
+      delayValue.textContent = this.value;
+    });
+    
+    // Global variables
+    let allFoundCoupons = [];
+    let failedUrls = []; // To track URLs with no coupons
+    
+    // Track textarea changes to update URL count
+    document.getElementById('urlInput').addEventListener('input', function() {
+      const urls = this.value.split('\n').filter(url => url.trim() !== '');
+      document.getElementById('urlCount').textContent = `${urls.length} URL${urls.length !== 1 ? 's' : ''}`;
+    });
+
+    // Log messages function
+    function logMessage(message) {
+      const logDiv = document.getElementById('logMessages');
+      const timestamp = new Date().toLocaleTimeString();
+      logDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+      logDiv.scrollTop = logDiv.scrollHeight;
+      document.getElementById('requestLog').classList.remove('hidden');
+    }
+    
+    // Sleep function for delay
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    async function analyzeUrls() {
+      const urlsText = document.getElementById('urlInput').value.trim();
+      
+      if (!urlsText) {
+        alert('Please enter at least one URL');
+        return;
+      }
+      
+      // Parse URLs (one per line)
+      const urls = urlsText.split('\n')
+        .map(url => url.trim())
+        .filter(url => url !== '');
+      
+      if (urls.length === 0) {
+        alert('Please enter at least one valid URL');
+        return;
+      }
+      
+      // Get the delay between requests
+      const delaySeconds = parseInt(document.getElementById('delaySlider').value);
+      
+      // Show loading
+      const loadingElement = document.getElementById('loading');
+      const progressCounter = document.getElementById('progressCounter');
+      loadingElement.style.display = 'block';
+      progressCounter.textContent = `0/${urls.length}`;
+      
+      // Clear previous results and logs
+      document.getElementById('results').innerHTML = '';
+      document.getElementById('logMessages').innerHTML = '';
+      document.getElementById('requestLog').classList.remove('hidden');
+      
+      // Reset global variables
+      allFoundCoupons = [];
+      failedUrls = [];
+      
+      // Track overall progress
+      let completedRequests = 0;
+      const allResults = [];
+      
+      // Process each URL with delay between requests
+      for (let i = 0; i < urls.length; i++) {
+        const url = urls[i];
+        
+        logMessage(`Starting analysis of URL: ${url}`);
+        
+        try {
+          // Send request to server for this URL
+          const response = await fetch('/analyze', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url: url })
+          });
+          
+          const data = await response.json();
+          completedRequests++;
+          progressCounter.textContent = `${completedRequests}/${urls.length}`;
+          
+          // If successful and has coupons, add to results
+          if (data.success && data.requests && data.requests.length > 0) {
+            allResults.push({
+              url: url,
+              requests: data.requests
+            });
+            logMessage(`✅ Found ${data.requests.reduce((count, req) => 
+              count + (req.response && req.response.coupons ? req.response.coupons.length : 0), 0)} coupons in ${url}`);
+          } else if (data.error) {
+            logMessage(`❌ Error analyzing ${url}: ${data.error}`);
+            failedUrls.push({ url, reason: `Error: ${data.error}` });
+          } else {
+            logMessage(`⚠️ No coupons found in ${url}`);
+            failedUrls.push({ url, reason: 'No coupons found' });
+          }
+        } catch (error) {
+          completedRequests++;
+          progressCounter.textContent = `${completedRequests}/${urls.length}`;
+          logMessage(`❌ Error analyzing ${url}: ${error.message}`);
+          failedUrls.push({ url, reason: `Error: ${error.message}` });
+        }
+        
+        // Add delay before next URL (except for the last one)
+        if (i < urls.length - 1) {
+          logMessage(`Waiting ${delaySeconds} seconds before next request...`);
+          await sleep(delaySeconds * 1000);
+        }
+      }
+      
+      // All requests completed
+      loadingElement.style.display = 'none';
+      renderAllResults(allResults);
+      logMessage(`✅ Analysis complete. Analyzed ${urls.length} URLs, found coupons in ${allResults.length} of them.`);
+    }
+    
+    function renderAllResults(allResults) {
+      const resultsContainer = document.getElementById('results');
+      resultsContainer.innerHTML = '';
+      
+      // Reset global coupons array
+      allFoundCoupons = [];
+      
+      if (allResults.length === 0 && failedUrls.length === 0) {
+        resultsContainer.innerHTML = `
+          <div class="request-card">
+            <div class="error-message">
+              <strong>No data found:</strong> No URLs were processed successfully.
+            </div>
+          </div>
+        `;
+        document.getElementById('exportSection').classList.add('hidden');
+        return;
+      }
+      
+      // Collect all coupons from all results
+      allResults.forEach(result => {
+        result.requests.forEach(request => {
+          if (request.response && request.response.coupons && request.response.coupons.length > 0) {
+            allFoundCoupons = [...allFoundCoupons, ...request.response.coupons];
+          }
+        });
+      });
+      
+      // Show export section if we found coupons
+      if (allFoundCoupons.length > 0) {
+        document.getElementById('exportSection').classList.remove('hidden');
+        document.getElementById('exportButton').innerText = `📊 Export All ${allFoundCoupons.length} Coupons to Excel`;
+      } else {
+        document.getElementById('exportSection').classList.add('hidden');
+      }
+      
+      // First, add failed URLs card if any
+      if (failedUrls.length > 0) {
+        const failedCard = document.createElement('div');
+        failedCard.className = 'request-card';
+        failedCard.innerHTML = `
+          <h2 style="color: #e74c3c;">Failed URLs (${failedUrls.length})</h2>
+          <p>The following URLs did not return any coupon data:</p>
+          <div style="margin-top: 15px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background-color: rgba(231, 76, 60, 0.1);">
+                  <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e74c3c;">URL</th>
+                  <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e74c3c;">Reason</th>
+                  <th style="text-align: center; padding: 8px; border-bottom: 2px solid #e74c3c;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${failedUrls.slice(0, 5).map((item, idx) => `
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px; word-break: break-all;">${item.url}</td>
+                    <td style="padding: 8px;">${item.reason}</td>
+                    <td style="padding: 8px; text-align: center;">
+                      <button onclick="copyToClipboard('${item.url}')" class="copy-button" title="Copy URL">
+                        📋
+                      </button>
+                    </td>
+                  </tr>
+                `).join('')}
+                ${failedUrls.length > 5 ? `
+                  <tr>
+                    <td colspan="3" style="padding: 10px; text-align: center;">
+                      <button onclick="openFailedUrlsModal()" style="background-color: #e74c3c;">
+                        Show All ${failedUrls.length} Failed URLs
+                      </button>
+                    </td>
+                  </tr>
+                ` : ''}
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top: 15px; display: flex; justify-content: space-between;">
+            <button onclick="retryFailedUrls()" style="background-color: #e74c3c;">Retry Failed URLs</button>
+            <button onclick="exportFailedUrls()" style="background-color: #7f8c8d;">Export Failed URLs List</button>
+          </div>
+        `;
+        resultsContainer.appendChild(failedCard);
+      }
+      
+      // Summary card for successful results
+      if (allResults.length > 0) {
+        const summaryCard = document.createElement('div');
+        summaryCard.className = 'request-card';
+        summaryCard.innerHTML = `
+          <h2>Summary of Results</h2>
+          <p>Found coupon data in ${allResults.length} URL(s)</p>
+          <div style="margin-top: 15px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background-color: rgba(52, 152, 219, 0.1);">
+                  <th style="text-align: left; padding: 8px; border-bottom: 2px solid var(--primary-color);">URL</th>
+                  <th style="text-align: center; padding: 8px; border-bottom: 2px solid var(--primary-color);">Coupons Found</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${allResults.map(result => `
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px; word-break: break-all;">
+                      <a href="#result-${encodeURIComponent(result.url)}">${result.url}</a>
+                    </td>
+                    <td style="padding: 8px; text-align: center;">
+                      ${result.requests.reduce((count, req) => 
+                        count + (req.response && req.response.coupons ? req.response.coupons.length : 0), 0)
+                      }
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+        resultsContainer.appendChild(summaryCard);
+        
+        // Then render each result
+        allResults.forEach(result => {
+          result.requests.forEach(request => {
+            if (request.response && request.response.coupons && request.response.coupons.length > 0) {
+              const requestCard = document.createElement('div');
+              requestCard.className = 'request-card';
+              requestCard.id = `result-${encodeURIComponent(result.url)}`;
+              
+              // Create method badge
+              const methodClass = `method-${request.method.toLowerCase()}`;
+              const methodBadge = `<span class="method-badge ${methodClass}">${request.method}</span>`;
+              
+              // Create status badge if response exists
+              let statusBadge = '';
+              if (request.response) {
+                const statusClass = `status-${Math.floor(request.response.status / 100)}xx`;
+                statusBadge = `<span class="status-badge ${statusClass}">${request.response.status}</span>`;
+              }
+              
+              // Display URL and coupon codes in a table
+              let couponsHtml = '';
+              if (request.response.coupons.length > 0) {
+                couponsHtml = `
+                  <div style="margin-top: 15px; padding: 15px; background-color: #d1ecf1; border-radius: 4px; border-left: 4px solid var(--primary-color);">
+                    <h3 style="margin-top: 0; color: var(--primary-dark);">Coupons Found:</h3>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                      <thead>
+                        <tr style="background-color: rgba(52, 152, 219, 0.1);">
+                          <th style="text-align: left; padding: 8px; border-bottom: 2px solid var(--primary-color);">Coupon Code</th>
+                          <th style="text-align: left; padding: 8px; border-bottom: 2px solid var(--primary-color);">Secret Code</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${request.response.coupons.map(coupon => `
+                          <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 8px; font-family: monospace; font-weight: bold;">${coupon.coupon_code}</td>
+                            <td style="padding: 8px; font-family: monospace; font-weight: bold;">${coupon.secret_code}</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                `;
+              }
+              
+              // Create the request header
+              const requestHeader = `
+                <h2>
+                  URL: ${result.url} ${methodBadge} ${statusBadge}
+                </h2>
+                <p><strong>Timestamp:</strong> ${request.timestamp}</p>
+                ${couponsHtml}
+              `;
+              
+              // Combine all parts
+              requestCard.innerHTML = requestHeader;
+              resultsContainer.appendChild(requestCard);
+            }
+          });
+        });
+      }
+    }
+    
+    function exportAllCoupons() {
+      if (allFoundCoupons.length === 0) {
+        alert('No coupons to export');
+        return;
+      }
+      
+      // Disable the export button
+      const exportButton = document.getElementById('exportButton');
+      exportButton.disabled = true;
+      exportButton.innerText = 'Generating Excel file...';
+      
+      // Clear previous status
+      document.getElementById('exportStatus').innerHTML = '';
+      
+      // Send all coupons to server to generate Excel file
+      fetch('/export-excel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ coupons: allFoundCoupons })
+      })
+      .then(response => response.json())
+      .then(data => {
+        exportButton.disabled = false;
+        exportButton.innerText = `📊 Export All ${allFoundCoupons.length} Coupons to Excel`;
+        
+        if (data.success) {
+          // Show success message with download link
+          document.getElementById('exportStatus').innerHTML = `
+            <div class="success-alert">
+              <span>
+                <strong>Success!</strong> Excel file with ${data.totalCoupons} coupons created.
+              </span>
+              <a href="${data.fileUrl}" class="download-link" download>Download File</a>
+            </div>
+          `;
+        } else {
+          document.getElementById('exportStatus').innerHTML = `
+            <div class="error-message">
+              <strong>Error:</strong> ${data.error}
+            </div>
+          `;
+        }
+      })
+      .catch(error => {
+        exportButton.disabled = false;
+        exportButton.innerText = `📊 Export All ${allFoundCoupons.length} Coupons to Excel`;
+        
+        document.getElementById('exportStatus').innerHTML = `
+          <div class="error-message">
+            <strong>Error:</strong> ${error.message}
+          </div>
+        `;
+      });
+    }
+    
+    function formatRequestBody(body) {
+      if (!body) return 'No body';
+      
+      try {
+        // Try to parse as JSON
+        const parsedBody = JSON.parse(body);
+        return JSON.stringify(parsedBody, null, 2);
+      } catch (e) {
+        // Return as is if not JSON
+        return body;
+      }
+    }
+    
+    function formatResponseBody(body) {
+      if (!body) return 'No body or binary data';
+      
+      try {
+        // Check if it's JSON
+        const parsedBody = JSON.parse(body);
+        
+        // If it contains a result array with secret_codes, highlight them
+        if (parsedBody.result && Array.isArray(parsedBody.result)) {
+          // Create a copy that only has the secret_codes
+          const simplifiedResult = parsedBody.result.map(item => {
+            if (item.secret_code) {
+              return { secret_code: item.secret_code };
+            }
+            return { note: "No secret_code found in this item" };
+          });
+          
+          // Add both views - simplified and full
+          return `Secret codes only:\n${JSON.stringify(simplifiedResult, null, 2)}\n\nFull response:\n${JSON.stringify(parsedBody, null, 2)}`;
+        }
+        
+        return JSON.stringify(parsedBody, null, 2);
+      } catch (e) {
+        // If not JSON, return the text
+        return body;
+      }
+    }
+    
+    function toggleDetails(id) {
+      const element = document.getElementById(id);
+      if (element.style.display === 'block') {
+        element.style.display = 'none';
+      } else {
+        element.style.display = 'block';
+      }
+    }
+    
+    // Function to open modal with all failed URLs
+    function openFailedUrlsModal() {
+      const modalContent = document.getElementById('modalFailedUrlsList');
+      modalContent.innerHTML = '';
+      
+      if (failedUrls.length === 0) {
+        modalContent.innerHTML = '<p>No failed URLs to display</p>';
+      } else {
+        // Create a table with all failed URLs
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        
+        // Create table header
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+          <tr style="background-color: rgba(231, 76, 60, 0.1);">
+            <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e74c3c;">#</th>
+            <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e74c3c;">URL</th>
+            <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e74c3c;">Reason</th>
+            <th style="text-align: center; padding: 8px; border-bottom: 2px solid #e74c3c;">Actions</th>
+          </tr>
+        `;
+        table.appendChild(thead);
+        // Create table body
+        const tbody = document.createElement('tbody');
+        failedUrls.forEach((item, index) => {
+          const row = document.createElement('tr');
+          row.style.borderBottom = '1px solid #eee';
+          
+          row.innerHTML = `
+            <td style="padding: 8px;">${index + 1}</td>
+            <td style="padding: 8px; word-break: break-all;">${item.url}</td>
+            <td style="padding: 8px;">${item.reason}</td>
+            <td style="padding: 8px; text-align: center;">
+              <button onclick="copyToClipboard('${item.url}')" class="copy-button" title="Copy URL">
+                📋
+              </button>
+            </td>
+          `;
+          
+          tbody.appendChild(row);
+        });
+        
+        table.appendChild(tbody);
+        modalContent.appendChild(table);
+      }
+      
+      // Show the modal
+      document.getElementById('failedUrlsModal').style.display = 'block';
+    }
+    
+    // Function to close the modal
+    function closeModal() {
+      document.getElementById('failedUrlsModal').style.display = 'none';
+    }
+    
+    // Function to copy all failed URLs to clipboard
+    function copyAllFailedUrls() {
+      if (failedUrls.length === 0) {
+        alert('No failed URLs to copy');
+        return;
+      }
+      
+      const urlsText = failedUrls.map(item => item.url).join('\n');
+      
+      navigator.clipboard.writeText(urlsText).then(
+        () => {
+          logMessage(`✅ Copied all ${failedUrls.length} failed URLs to clipboard`);
+          // Show brief feedback in the modal
+          const modalContent = document.getElementById('modalFailedUrlsList');
+          const feedbackDiv = document.createElement('div');
+          feedbackDiv.style.padding = '10px';
+          feedbackDiv.style.marginTop = '10px';
+          feedbackDiv.style.backgroundColor = '#d4edda';
+          feedbackDiv.style.color = '#155724';
+          feedbackDiv.style.borderRadius = '4px';
+          feedbackDiv.innerHTML = `<strong>Success!</strong> Copied ${failedUrls.length} URLs to clipboard.`;
+          
+          // Insert feedback at the top of the modal content
+          modalContent.insertBefore(feedbackDiv, modalContent.firstChild);
+          
+          // Remove the feedback after 3 seconds
+          setTimeout(() => {
+            modalContent.removeChild(feedbackDiv);
+          }, 3000);
+        },
+        (err) => {
+          logMessage(`❌ Could not copy failed URLs: ${err}`);
+          alert('Failed to copy URLs: ' + err);
+        }
+      );
+    }
+    
+    // Function to copy URL to clipboard
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(
+        () => {
+          logMessage(`✅ Copied to clipboard: ${text}`);
+        },
+        (err) => {
+          logMessage(`❌ Could not copy text: ${err}`);
+        }
+      );
+    }
+    
+    // Function to retry failed URLs
+    function retryFailedUrls() {
+      if (failedUrls.length === 0) {
+        alert('No failed URLs to retry');
+        return;
+      }
+      
+      // Extract just the URLs from the failed list
+      const urlsToRetry = failedUrls.map(item => item.url);
+      
+      // Set the textarea with the failed URLs
+      document.getElementById('urlInput').value = urlsToRetry.join('\n');
+      
+      // Update URL count
+      document.getElementById('urlCount').textContent = `${urlsToRetry.length} URL${urlsToRetry.length !== 1 ? 's' : ''}`;
+      
+      // Scroll to the top of the page
+      window.scrollTo(0, 0);
+      
+      logMessage(`Loaded ${urlsToRetry.length} failed URLs for retry`);
+      
+      // Close the modal if it's open
+      document.getElementById('failedUrlsModal').style.display = 'none';
+    }
+    
+    // Function to export failed URLs to a text file
+    function exportFailedUrls() {
+      if (failedUrls.length === 0) {
+        alert('No failed URLs to export');
+        return;
+      }
+      
+      const urlsText = failedUrls.map(item => item.url).join('\n');
+      const blob = new Blob([urlsText], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `failed_urls_${new Date().toISOString().slice(0, 10)}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 0);
+      
+      logMessage(`Exported ${failedUrls.length} failed URLs to text file`);
+    }
+    
+    // Close the modal if the user clicks outside of it
+    window.onclick = function(event) {
+      const modal = document.getElementById('failedUrlsModal');
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>
