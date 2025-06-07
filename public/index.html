@@ -416,19 +416,12 @@
         <p style="font-weight: 600; margin-bottom: 10px;">Enter the website URLs (one per line):</p>
         <textarea id="urlInput" class="full-width-input" style="min-height: 100px; resize: vertical;" placeholder="https://example1.com&#10;https://example2.com&#10;https://example3.com" required></textarea>
         
-        <div style="margin-top: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-weight: 600;">Delay between requests (seconds):</label>
-          <input type="range" id="delaySlider" min="1" max="30" value="5" style="width: 50%;">
-          <span id="delayValue">5</span> seconds
-          <p style="margin-top: 5px; font-size: 13px; color: #666;">Adding a delay helps avoid rate limiting and bans</p>
-        </div>
-        
         <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
           <button onclick="analyzeUrls()" style="margin-left: 0;">Analyze All URLs</button>
           <span id="urlCount" style="color: #666; font-size: 14px;">0 URLs</span>
         </div>
         <p style="margin-top: 10px; font-size: 13px; color: #666;">
-          <strong>Note:</strong> This tool randomizes user agents for each request to avoid detection
+          <strong>Note:</strong> URLs will be processed with a 1-second delay between requests to avoid rate limits
         </p>
       </div>
     </div>
@@ -472,17 +465,12 @@
   </div>
 
   <script>
-    // Configure delay slider
-    const delaySlider = document.getElementById('delaySlider');
-    const delayValue = document.getElementById('delayValue');
-    
-    delaySlider.addEventListener('input', function() {
-      delayValue.textContent = this.value;
-    });
-    
     // Global variables
     let allFoundCoupons = [];
     let failedUrls = []; // To track URLs with no coupons
+    
+    // Fixed delay between requests (1 second)
+    const DELAY_BETWEEN_REQUESTS = 1000; // 1 second in milliseconds
     
     // Track textarea changes to update URL count
     document.getElementById('urlInput').addEventListener('input', function() {
@@ -522,9 +510,6 @@
         return;
       }
       
-      // Get the delay between requests
-      const delaySeconds = parseInt(document.getElementById('delaySlider').value);
-      
       // Show loading
       const loadingElement = document.getElementById('loading');
       const progressCounter = document.getElementById('progressCounter');
@@ -544,7 +529,7 @@
       let completedRequests = 0;
       const allResults = [];
       
-      // Process each URL with delay between requests
+      // Process each URL with fixed 1-second delay between requests
       for (let i = 0; i < urls.length; i++) {
         const url = urls[i];
         
@@ -586,10 +571,10 @@
           failedUrls.push({ url, reason: `Error: ${error.message}` });
         }
         
-        // Add delay before next URL (except for the last one)
+        // Add 1-second delay before next URL (except for the last one)
         if (i < urls.length - 1) {
-          logMessage(`Waiting ${delaySeconds} seconds before next request...`);
-          await sleep(delaySeconds * 1000);
+          logMessage(`Waiting 1 second before next request...`);
+          await sleep(DELAY_BETWEEN_REQUESTS);
         }
       }
       
